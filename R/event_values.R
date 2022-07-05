@@ -8,44 +8,46 @@
 compute_ripp <- function(data) {
   data %>%
     dplyr::mutate(
-      start.xG = predict_xg(X.Coordinate, Y.Coordinate),
-      end.xG = predict_xg(X.Coordinate.2, Y.Coordinate.2),
-      nextEvent.xG = dplyr::lead(start.xG, 1),
-      previousEvent.xG = dplyr::lag(start.xG, 1),
+      start_xg = predict_xg(X.Coordinate, Y.Coordinate),
+      end_xg = predict_xg(X.Coordinate.2, Y.Coordinate.2),
+      next_event_xg = dplyr::lead(start_xg, 1),
+      prevous_event_xg = dplyr::lag(start_xg, 1),
 
       # Reflect coordinates before computing xG
-      teamB.faceoff.xG = predict_xg(200 - X.Coordinate, 85 - Y.Coordinate),
-      faceoff.startValue = 0.5 * start.xG - 0.5 * teamB.faceoff.xG,
-      shot.endValue = ifelse(dplyr::lead(Event, 1) == "Faceoff Win",
+      opp_faceoff_xg = predict_xg(200 - X.Coordinate, 85 - Y.Coordinate),
+      faceoff_start_value = 0.5 * start_xg - 0.5 * opp_faceoff_xg,
+      shot_end_value = ifelse(dplyr::lead(Event, 1) == "Faceoff Win",
                              # Shot led to faceoff - who won the faceoff?
-                             ifelse(dplyr::lead(Team, 1) == Team, faceoff.startValue, -faceoff.startValue),
+                             ifelse(dplyr::lead(Team, 1) == Team, faceoff_start_value, -faceoff_start_value),
                              # Shot led to rebound - who got the rebound?
-                             ifelse(dplyr::lead(Team, 1) == Team, nextEvent.xG, -nextEvent.xG)),
-      dump.endValue = ifelse(Detail.1 == "Recoverd", nextEvent.xG, -nextEvent.xG),
+                             ifelse(dplyr::lead(Team, 1) == Team, next_event_xg, -next_event_xg)),
+      dump_end_value = ifelse(Detail.1 == "Recoverd", next_event_xg, -next_event_xg),
 
-      # Event values
-      pass.value = end.xG - start.xG,
-      turnover.value = - nextEvent.xG -start.xG,
-      recovery.value = start.xG + previousEvent.xG,
-      faceoffWin.value = nextEvent.xG - faceoff.startValue,
-      shot.value = shot.endValue - start.xG,
-      goal.value = 1 - start.xG,
-      dump.value = dump.endValue - start.xG,
+      start_value = dplyr::recode(
+        Event,
+        "Play" = start_xg,
+        "Incomplete Play" = start_xg,
+        "Puck Recovery" = - prevous_event_xg,
+        "Dump In/Out" = dump_end_value,
+        "Faceoff Win" = faceoff_start_value,
+        "Goal" = start_xg,
+        "Shot" = start_xg,
+        .default = NA_real_
+      ),
 
-      # RIPP
-      RIPP = dplyr::case_when(
-        Event == "Play" ~ pass.value,
-        Event == "Incomplete Play" ~ turnover.value,
-        Event == "Puck Recovery" ~ recovery.value,
-        Event == "Dump In/Out" ~ dump.value,
-        Event == "Faceoff Win" ~ faceoffWin.value,
-        Event == "Goal" ~ goal.value,
-        Event == "Shot" ~ shot.value,
-        TRUE ~ NA_real_)
+      end_value = dplyr::recode(
+        Event,
+        "Play" = end_xg,
+        "Incomplete Play" = - next_event_xg,
+        "Puck Recovery" = start_xg,
+        "Dump In/Out" = start_xg,
+        "Faceoff Win" = next_event_xg,
+        "Goal" = 1,
+        "Shot" = shot_end_value,
+        .default = NA_real_
+      ),
+
+      RIPP = end_value - start_value
     ) %>%
     dplyr::pull(RIPP)
 }
-
-# TODO ----
-# Separate this into a few functions
-# Have one column with action start value and one column with action end value
