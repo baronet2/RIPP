@@ -1,0 +1,70 @@
+---
+title: "RIPP"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{RIPP}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(RIPP)
+```
+
+This is how to compute expected goals values:
+
+```{r}
+data(event_data, package = "RIPP")
+event_data %>%
+  prepare_xg_features() %>%
+  dplyr::mutate(xg = predict_xg(X.Coordinate, Y.Coordinate))
+```
+
+This is how to compute RIPP:
+
+```{r}
+event_values <- event_data %>%
+  dplyr::mutate(RIPP = compute_ripp(.)) %>%
+  dplyr::filter(!is.na(RIPP))
+
+event_values
+```
+
+These are our results:
+
+```{r, message = FALSE, warning = FALSE}
+event_values %>%
+    dplyr::group_by(Player) %>%
+    dplyr::summarize(
+      RIPP = sum(RIPP),
+      Matches = length(unique(game_date)),
+      RIPP_per_game = RIPP / Matches,
+      goals_per_game = sum(Event == "Goal")/ Matches,
+      n_plays = dplyr::n(),
+      Team = dplyr::first(Team),
+      Competition = dplyr::first(Competition)
+    ) %>%
+  dplyr::filter(Matches >= 5) %>%
+  dplyr::mutate(RIPP_per_game = round(RIPP_per_game, 2)) %>%
+  dplyr::select(Player, Team, Matches, RIPP_per_game) %>%
+  dplyr::arrange(desc(RIPP_per_game))
+```
+
+```{r, message = FALSE, warning = FALSE}
+player_ripp_vs_goals(event_values)
+```
+
+```{r, message = FALSE, warning = FALSE}
+player_vs_average(event_values, "Marie-Philip Poulin")
+```
+
+```{r, message = FALSE, warning = FALSE}
+team_ripp_vs_goals(event_values)
+```
