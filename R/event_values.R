@@ -10,26 +10,26 @@ compute_ripp <- function(data) {
     dplyr::mutate(
       start_xg = predict_xg(X.Coordinate, Y.Coordinate),
       end_xg = predict_xg(X.Coordinate.2, Y.Coordinate.2),
-      next_event_xg = dplyr::lead(start_xg, 1),
-      prevous_event_xg = dplyr::lag(start_xg, 1),
+      next_event_xg = dplyr::lead(start_xg),
+      previous_event_xg = dplyr::lag(start_xg),
+      opp_xg = predict_xg(200 - X.Coordinate, 85 - Y.Coordinate), # Reflect coordinates
 
-      # Reflect coordinates before computing xG
-      opp_faceoff_xg = predict_xg(200 - X.Coordinate, 85 - Y.Coordinate),
-      faceoff_start_value = 0.5 * start_xg - 0.5 * opp_faceoff_xg,
-      shot_end_value = ifelse(dplyr::lead(Event, 1) == "Faceoff Win",
+      faceoff_start_value = 0.5 * start_xg - 0.5 * opp_xg,
+      shot_end_value = ifelse(dplyr::lead(Event) == "Faceoff Win",
                              # Shot led to faceoff - who won the faceoff?
-                             ifelse(dplyr::lead(Team, 1) == Team, faceoff_start_value, -faceoff_start_value),
+                             ifelse(dplyr::lead(Team) == Team,
+                                    dplyr::lead(faceoff_start_value),
+                                    - dplyr::lead(faceoff_start_value)),
                              # Shot led to rebound - who got the rebound?
-                             ifelse(dplyr::lead(Team, 1) == Team, next_event_xg, -next_event_xg)),
-      dump_end_value = ifelse(Detail.1 == "Recoverd", next_event_xg, -next_event_xg),
+                             ifelse(dplyr::lead(Team) == Team, next_event_xg, -next_event_xg)),
 
       start_value = dplyr::recode(
         Event,
         "Play" = start_xg,
         "Incomplete Play" = start_xg,
-        "Puck Recovery" = - prevous_event_xg,
-        "Dump In/Out" = dump_end_value,
-        "Faceoff Win" = faceoff_start_value,
+        "Puck Recovery" = ifelse(Team == dplyr::lag(Team), previous_event_xg, - previous_event_xg),
+        "Dump In/Out" = ifelse(Detail.1 == "Recovered", next_event_xg, -next_event_xg),
+        "Faceoff Win" = 0.5 * start_xg - 0.5 * opp_xg,
         "Goal" = start_xg,
         "Shot" = start_xg,
         .default = NA_real_
@@ -51,3 +51,7 @@ compute_ripp <- function(data) {
     ) %>%
     dplyr::pull(RIPP)
 }
+
+# TODO ----
+# Use state value model instead of xG model
+# Include remaining event types
