@@ -7,7 +7,15 @@ Authours:
 Ethan Baron, Daniel Hocevar, Kabir Malik, Aaron White  
 University of Toronto Sports Analytics Student Group (UTSPAN)
 
-See our paper submission [here](https://github.com/baronet2/RIPP/blob/master/Paper%20Submission.pdf).  
+See our presentation [here](https://youtu.be/QcfcsO8A3k0).  
+See our paper [here](https://github.com/baronet2/RIPP/blob/master/Paper%20Submission.pdf).  
 See our slide deck [here](https://github.com/baronet2/RIPP/blob/master/Slide%20Deck.pdf).
 
 Note that our results have evolved over time thanks to improvements in the calculation of RIPP.
+
+## Usage
+
+To install our package, use `devtools::install_github("https://github.com/baronet2/RIPP")`.
+
+You are also welcome to contribute pull requests on GitHub if you would like to improve RIPP.
+The limitations discussed in our presentation are a great place to start!
