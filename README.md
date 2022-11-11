@@ -3,7 +3,7 @@
 The companion repository to our 2022 Big Data Cup submission titled *"RIPP: Holistic Player Evaluation with Region-Based Isolated Player Performance"*.
 Our submission won first place in the undegraduate category after we presented at the 2022 Big Data Cup finals, held virtually on July 15, 2022.
 
-Authours:  
+Authors:  
 Ethan Baron, Daniel Hocevar, Kabir Malik, Aaron White  
 University of Toronto Sports Analytics Student Group (UTSPAN)
 
